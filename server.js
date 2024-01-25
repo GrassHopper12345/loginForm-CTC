@@ -5,8 +5,6 @@ const routes = require('./controllers');
 
 const exphbs = require('express-handlebars');
 
-const helpers = require('./utils/helpers');
-
 
 const PORT = process.env.PORT || 3001;
 const app = express();
