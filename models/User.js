@@ -1,13 +1,13 @@
-const { Schema, model, Types } = require('mongoose');
+const { Schema, model } = require('mongoose');
+const bcrypt = require('bcrypt');
 
 // Schema to create User model
 const userSchema = new Schema(
     {
         id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            primaryKey: true,
-            autoIncrement: true,
+            type: Number,
+            required: true,
+            unique: true,
         },
         username: {
             type: String,
@@ -27,12 +27,17 @@ const userSchema = new Schema(
             ],
         },
         password: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            validate: {
-                len: [8],
-            },
+            type: String,
+            required: true,
+            minLength: 8,
         },
+    },
+    {
+        // dont know if I need this, test!!!
+        toJSON: {
+            virtuals: true,
+        },
+        id: false,
     },
     {
         hooks: {
@@ -46,13 +51,6 @@ const userSchema = new Schema(
             },
         },
     },
-    {
-        // dont know if I need this, test!!!
-        toJSON: {
-            virtuals: true,
-        },
-        id: false,
-    }
 );
 
 const User = model('User', userSchema);

@@ -1,40 +1,34 @@
 const router = require('express').Router();
 const { User } = require('../../models');
-const { createSecretToken } = require('../../utils/jwt');
+const { createSecretToken, verifyToken } = require('../../utils/jwt');
 
-router.get('/', (req, res) => {
-    User.findAll({
-        attributes: { exclude: ['password'] },
-    })
-        .then((dbUserData) => res.json(dbUserData))
-        .catch((err) => {
-            res.status(500).json(err);
+router.get('/', async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: { exclude: ['password'] },
         });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json(err);
+    }
 });
 
 router.post('/signup', async (req, res) => {
     try {
-        console.log(123);
-        const newUserData = new User();
-        newUserData.username = req.body.username;
-        newUserData.email = req.body.email;
-        newUserData.password = req.body.password;
+        const newUserData = {
+            username: req.body.username,
+            email: req.body.email,
+            password: req.body.password,
+        };
 
-        const userData = await newUserData.save();
-        console.log(userData);
+        const userData = await User.create(newUserData);
 
-        const token = createSecretToken(userData.id)
+        const token = createSecretToken(userData.id);
         res.cookie('authToken', token);
 
-        // req.session.save(() => {
-        //     req.session.user_id = userData.id;
-        //     req.session.logged_in = true;
-
-        //     res.status(200).json(userData);
-        // });
+        res.status(201).json({ user: userData, message: 'User created successfully' });
     } catch (err) {
         res.status(400).json(err);
-        console.log(err);
     }
 });
 
@@ -42,39 +36,23 @@ router.post('/login', async (req, res) => {
     try {
         const userData = await User.findOne({ where: { username: req.body.username } });
 
-        if (!userData) {
-            res.status(400).json(err);
-            return;
-        }
-        const validPassword = await userData.checkPassword(req.body.password);
-
-        if (!validPassword) {
-            res.status(400).json(err);
+        if (!userData || !(await userData.checkPassword(req.body.password))) {
+            res.status(400).json({ message: 'Invalid credentials' });
             return;
         }
 
-        const token = createSecretToken(userData.id)
+        const token = createSecretToken(userData.id);
         res.cookie('authToken', token);
 
-
-        // req.session.save(() => {
-        //     req.session.user_id = userData.id;
-        //     req.session.logged_in = true;
-        //     res.status(200).json({ user: userData, message: 'You are now logged in' });
-        // })
+        res.status(200).json({ user: userData, message: 'Login successful' });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(500).json(err);
     }
 });
 
 router.post("/logout", (req, res) => {
-    if (req.session.logged_in) {
-        req.session.destroy(() => {
-            res.status(204).end();
-        });
-    } else {
-        res.status(404).end();
-    }
+    res.clearCookie('authToken');
+    res.status(204).end();
 });
 
 module.exports = router;
