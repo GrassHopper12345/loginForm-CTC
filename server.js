@@ -1,5 +1,5 @@
 const path = require('path');
-// const session = require('express-session');
+
 const express = require('express');
 const routes = require('./controllers');
 
@@ -17,6 +17,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(routes);
+
+
 
 db.once('open', () => {
   app.listen(PORT, () => {

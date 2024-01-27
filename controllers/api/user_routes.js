@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { User } = require('../../models');
+const { createSecretToken } = require('../../utils/jwt');
 
 router.get('/', (req, res) => {
     User.findAll({
@@ -22,12 +23,15 @@ router.post('/signup', async (req, res) => {
         const userData = await newUserData.save();
         console.log(userData);
 
-        req.session.save(() => {
-            req.session.user_id = userData.id;
-            req.session.logged_in = true;
+        const token = createSecretToken(userData.id)
+        res.cookie('authToken', token);
 
-            res.status(200).json(userData);
-        });
+        // req.session.save(() => {
+        //     req.session.user_id = userData.id;
+        //     req.session.logged_in = true;
+
+        //     res.status(200).json(userData);
+        // });
     } catch (err) {
         res.status(400).json(err);
         console.log(err);
@@ -48,17 +52,22 @@ router.post('/login', async (req, res) => {
             res.status(400).json(err);
             return;
         }
-        req.session.save(() => {
-            req.session.user_id = userData.id;
-            req.session.logged_in = true;
-            res.status(200).json({ user: userData, message: 'You are now logged in' });
-        })
+
+        const token = createSecretToken(userData.id)
+        res.cookie('authToken', token);
+
+
+        // req.session.save(() => {
+        //     req.session.user_id = userData.id;
+        //     req.session.logged_in = true;
+        //     res.status(200).json({ user: userData, message: 'You are now logged in' });
+        // })
     } catch (err) {
         res.status(400).json(err);
     }
 });
 
-router.get("/logout", (req, res) => {
+router.post("/logout", (req, res) => {
     if (req.session.logged_in) {
         req.session.destroy(() => {
             res.status(204).end();
